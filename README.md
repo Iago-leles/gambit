@@ -4,7 +4,7 @@ Aplicação de xadrez em 3D no navegador, com salas criadas pelo próprio usuár
 
 É um projeto pessoal de portfólio, sem fins comerciais, pensado para rodar com **custo zero**.
 
-> **Status:** em construção. O esqueleto do monorepo está pronto. O pacote `core` é o próximo passo. O plano completo está em [docs/plano.md](docs/plano.md) e as decisões em [docs/adr/](docs/adr/).
+> **Status:** em construção. O pacote `core` está pronto e testado. O próximo passo é o tabuleiro 2D local em `apps/web`. O plano completo está em [docs/plano.md](docs/plano.md) e as decisões em [docs/adr/](docs/adr/).
 
 ---
 

@@ -1,4 +1,9 @@
-// Ponto de entrada do pacote compartilhado por cliente e servidor.
-// Os módulos (rules, code, clock, chess960, result, game, protocol) entram na Fase 1.
+// Pacote compartilhado por cliente e servidor (ADR 003).
 
-export const CORE_VERSION = "0.0.0";
+export * from "./chess960";
+export * from "./clock";
+export * from "./code";
+export * from "./game";
+export * from "./protocol";
+export * from "./result";
+export * from "./rules";
