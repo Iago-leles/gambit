@@ -1,7 +1,7 @@
 .main {
-  max-width: 36rem;
+  max-width: 52rem;
   margin: 0 auto;
-  padding: 18vh 1rem 4rem;
+  padding: 12vh 1rem 4rem;
 }
 
 .title {
@@ -13,22 +13,141 @@
 }
 
 .lead {
-  margin: 1.25rem 0 2rem;
+  margin: 1.25rem 0 2.5rem;
   max-width: 32rem;
   font-size: 1.15rem;
   color: var(--text-muted);
 }
 
-.cta {
+.actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1.25rem;
+  align-items: start;
+}
+
+@media (min-width: 46rem) {
+  .actions {
+    grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  }
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1.25rem;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+}
+
+.cardTitle {
+  margin: 0;
+  font-size: 1.35rem;
+  letter-spacing: -0.01em;
+}
+
+.fieldset {
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.legend {
+  margin-bottom: 0.4rem;
+  padding: 0;
+  font-size: 0.95rem;
+  color: var(--text-muted);
+}
+
+.choices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.choice {
+  position: relative;
+}
+
+.choice input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.choice span {
   display: inline-block;
+  padding: 0.45rem 0.8rem;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.choice input:checked + span {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--accent-text);
+}
+
+.choice input:focus-visible + span {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.checkbox {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.codeInput {
+  padding: 0.6rem 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+  font-size: 1.6rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.codeInput:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 1px;
+}
+
+.formError {
+  margin: 0;
+  color: var(--check);
+  font-weight: 600;
+}
+
+.cta {
+  align-self: flex-start;
   padding: 0.8rem 1.4rem;
+  border: 0;
   border-radius: 6px;
   background: var(--accent);
   color: var(--accent-text);
+  font: inherit;
   font-weight: 600;
-  text-decoration: none;
+  cursor: pointer;
 }
 
 .cta:hover {
   filter: brightness(1.08);
+}
+
+.cta:disabled {
+  cursor: default;
+  opacity: 0.7;
+}
+
+.secondary {
+  font-size: 0.95rem;
 }

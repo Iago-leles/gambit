@@ -1,31 +1,16 @@
 import { Game, opposite, type Color } from "@gambit/core";
 import { createStore } from "zustand/vanilla";
-import {
-  checkSquare,
-  destsFrom,
-  isPromotion,
-  moveSquares,
-  piecesFromFen,
-  type BoardPiece,
-} from "./board-view";
+import { clickSquare } from "./board-interaction";
+import { deriveBoard, type BoardDerived, type PromotionChoice } from "./board-state";
 
 /**
  * Partida local (os dois lados no mesmo navegador), sem rede.
  * A `Game` é tratada como imutável: cada lance gera um clone.
  */
 
-export type PromotionChoice = "q" | "r" | "b" | "n";
+export type { PromotionChoice };
 
-/** Valores calculados a partir da partida e da seleção. A UI só lê. */
-interface Derived {
-  pieces: Map<string, BoardPiece>;
-  legalMoves: string[];
-  dests: string[];
-  lastMove: { from?: string; to: string } | undefined;
-  checkSquare: string | undefined;
-}
-
-export interface LocalGameState extends Derived {
+export interface LocalGameState extends BoardDerived {
   game: Game;
   selected: string | null;
   pendingPromotion: { from: string; to: string } | null;
@@ -39,20 +24,9 @@ export interface LocalGameState extends Derived {
   resign: () => void;
 }
 
-function derive(game: Game, selected: string | null): Derived {
-  const legalMoves = game.legalMoves();
-  return {
-    pieces: piecesFromFen(game.fen),
-    legalMoves,
-    dests: selected ? destsFrom(legalMoves, selected) : [],
-    lastMove: moveSquares(game.moves.at(-1)?.uci),
-    checkSquare: checkSquare(game.fen, game.isCheck),
-  };
-}
-
 /** Estado de uma partida nova ou depois de um lance: sem seleção. */
 function fresh(game: Game) {
-  return { game, selected: null, pendingPromotion: null, ...derive(game, null) };
+  return { game, selected: null, pendingPromotion: null, ...deriveBoard(game, null) };
 }
 
 export function createLocalGameStore(initialFen?: string) {
@@ -64,7 +38,7 @@ export function createLocalGameStore(initialFen?: string) {
     };
 
     const select = (square: string | null) => {
-      set({ selected: square, ...derive(get().game, square) });
+      set({ selected: square, ...deriveBoard(get().game, square) });
     };
 
     return {
@@ -72,21 +46,14 @@ export function createLocalGameStore(initialFen?: string) {
       orientation: "white",
 
       selectSquare(square) {
-        const { game, selected, dests, pieces, legalMoves, pendingPromotion } = get();
+        const { game, selected, pieces, legalMoves, pendingPromotion } = get();
         if (game.result || pendingPromotion) return;
 
-        if (selected && dests.includes(square)) {
-          if (isPromotion(legalMoves, selected, square)) {
-            set({ pendingPromotion: { from: selected, to: square } });
-          } else {
-            play(selected + square);
-          }
-          return;
-        }
-
-        const piece = pieces.get(square);
-        const isOwn = piece?.color === game.turn;
-        select(isOwn && square !== selected ? square : null);
+        const outcome = clickSquare({ square, selected, pieces, turn: game.turn, legalMoves });
+        if (outcome.type === "move") play(outcome.uci);
+        else if (outcome.type === "promote")
+          set({ pendingPromotion: { from: outcome.from, to: outcome.to } });
+        else select(outcome.square);
       },
 
       choosePromotion(choice) {

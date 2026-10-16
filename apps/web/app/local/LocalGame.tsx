@@ -1,12 +1,13 @@
 "use client";
 
-import { describeResult, type PlayedMove } from "@gambit/core";
+import { describeResult } from "@gambit/core";
 import Link from "next/link";
 import { useState } from "react";
 import { useStore } from "zustand";
 import { Board2D } from "@/components/Board2D";
 import { createLocalGameStore } from "@/lib/local-game-store";
-import styles from "./LocalGame.module.css";
+import styles from "@/components/GameLayout.module.css";
+import { MoveList } from "@/components/MoveList";
 
 export function LocalGame() {
   const [store] = useState(() => createLocalGameStore());
@@ -46,7 +47,10 @@ export function LocalGame() {
             : `${game.turn === "white" ? "Brancas" : "Pretas"} jogam${game.isCheck ? ". Xeque." : ""}`}
         </p>
 
-        <MoveList moves={game.moves} />
+        <MoveList
+          moves={game.moves}
+          emptyText="As brancas começam. Clique numa peça para ver os lances."
+        />
 
         <div className={styles.actions}>
           <button type="button" className={styles.button} onClick={state.flip}>
@@ -70,32 +74,5 @@ export function LocalGame() {
         </div>
       </aside>
     </main>
-  );
-}
-
-function MoveList({ moves }: { moves: readonly PlayedMove[] }) {
-  if (moves.length === 0) {
-    return <p className={styles.empty}>As brancas começam. Clique numa peça para ver os lances.</p>;
-  }
-
-  const rows: { number: number; white: string; black?: string }[] = [];
-  moves.forEach((move, ply) => {
-    if (ply % 2 === 0) rows.push({ number: ply / 2 + 1, white: move.san });
-    else {
-      const row = rows.at(-1);
-      if (row) row.black = move.san;
-    }
-  });
-
-  return (
-    <ol className={styles.moves} aria-label="Lances">
-      {rows.map((row) => (
-        <li key={row.number} className={styles.moveRow}>
-          <span className={styles.moveNumber}>{row.number}.</span>
-          <span>{row.white}</span>
-          <span>{row.black}</span>
-        </li>
-      ))}
-    </ol>
   );
 }
