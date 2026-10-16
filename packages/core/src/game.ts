@@ -11,6 +11,8 @@ import { opposite, type Color, type GameResult } from "./result";
  * repetição tripla, regra dos 75 lances e fins externos (desistência, tempo, acordo).
  */
 
+export { INITIAL_FEN };
+
 export interface PlayedMove {
   /** UCI canônico. Roque em notação padrão (`e1g1`) quando a posição permite. */
   uci: string;

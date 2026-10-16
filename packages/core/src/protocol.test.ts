@@ -91,6 +91,9 @@ describe("mensagens do servidor", () => {
       },
     },
     { type: "error", code: "illegal_move", message: "Lance ilegal" },
+    { type: "error", code: "waiting_for_opponent", message: "Aguardando oponente" },
+    { type: "error", code: "no_draw_offer", message: "Sem oferta de empate" },
+    { type: "error", code: "room_not_found", message: "Sala não encontrada" },
     { type: "pong", t: 1, serverNow: 2 },
   ])("ida e volta preserva a mensagem: $type", (msg) => {
     expect(parseServerMessage(encodeMessage(msg))).toEqual(msg);

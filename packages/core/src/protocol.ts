@@ -100,11 +100,14 @@ export const ErrorCode = z.enum([
   "too_large",
   "illegal_move",
   "not_your_turn",
+  "waiting_for_opponent",
   "stale_ply",
   "game_over",
   "not_a_player",
   "room_full",
   "spectators_disabled",
+  "no_draw_offer",
+  "room_not_found",
 ]);
 export type ErrorCode = z.infer<typeof ErrorCode>;
 
