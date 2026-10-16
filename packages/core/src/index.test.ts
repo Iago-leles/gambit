@@ -11,4 +11,8 @@ describe("core", () => {
     expect(core.chess960Fen).toBeTypeOf("function");
     expect(core.resultToPgn).toBeTypeOf("function");
   });
+
+  it("exporta a posição inicial padrão", () => {
+    expect(core.INITIAL_FEN).toBe("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+  });
 });

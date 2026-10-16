@@ -14,6 +14,7 @@ export default tseslint.config(
       "**/.open-next/",
       "**/.wrangler/",
       "**/coverage/",
+      "**/worker-configuration.d.ts",
     ],
   },
   js.configs.recommended,

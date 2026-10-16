@@ -70,6 +70,8 @@ Detalhe importante: o chessops não detecta repetição sozinho. A `Game` precis
 
 ## Fase 2 — Salas online
 
+Dividida em três PRs: **2a** servidor, **2b** cliente online, **2c** E2E.
+
 **Objetivo:** dois navegadores jogam pela internet, com relógio e reconexão.
 
 ### 2a. `apps/server` (Worker + Durable Object)
@@ -100,7 +102,9 @@ Lógica da `Room`:
 
 Testes:
 
-- Vitest com `@cloudflare/vitest-pool-workers`: criação, colisão de código, reivindicação de assento, lance ilegal, lance fora da vez, `ply` atrasado, fim de tempo por alarme, expiração.
+- A lógica da sala fica em `room-core.ts`, pura e testada com Vitest comum: assentos, lances, relógio, empate, alarme e expiração.
+- O Worker e o Durable Object são testados de ponta a ponta: o teste sobe o Worker real com `unstable_startWorker` do wrangler e conversa por HTTP e WebSocket.
+- O `@cloudflare/vitest-plugin` (antigo `vitest-pool-workers`) falhou no Windows com um erro de caminho. Por isso a troca.
 
 ### 2b. Cliente online em `apps/web`
 
@@ -204,7 +208,7 @@ Cada item vira um plano separado quando chegar a hora.
 Por fase:
 
 - **Fase 1:** `pnpm test` (perft + casos de fim de jogo) e partida manual em `/local`.
-- **Fase 2:** testes do Worker com `@cloudflare/vitest-pool-workers` e Playwright com dois navegadores contra `wrangler dev`. Depois, dois aparelhos reais na demo.
+- **Fase 2:** testes do `room-core`, testes de integração com o Worker real (wrangler) e Playwright com dois navegadores contra `wrangler dev`. Depois, dois aparelhos reais na demo.
 - **Fase 3:** mesmo E2E rodando com a cena 3D. Medir fps no DevTools em modo celular.
 - **Fase 4:** perft das variantes e um E2E por variante.
 - **Fase 5:** revisar a demo publicada e o preview de link colando a URL no WhatsApp.
