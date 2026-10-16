@@ -1,0 +1,186 @@
+.frame {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1;
+  container-type: inline-size;
+}
+
+.board {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  grid-template-rows: repeat(8, 1fr);
+  width: 100%;
+  height: 100%;
+  border-radius: 4px;
+  overflow: hidden;
+  box-shadow: 0 0 0 1px var(--board-edge);
+}
+
+.square {
+  position: relative;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+}
+
+.square:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: -3px;
+  z-index: 1;
+}
+
+.light {
+  background: var(--square-light);
+}
+
+.dark {
+  background: var(--square-dark);
+}
+
+/* Destaques ficam por cima da cor da casa. */
+.lastMove::before,
+.selected::before,
+.check::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+}
+
+.lastMove::before {
+  background: var(--last-move);
+}
+
+.selected::before {
+  background: var(--selected);
+}
+
+.check::before {
+  background: radial-gradient(circle, var(--check) 0%, var(--check) 35%, transparent 72%);
+}
+
+/* Destino vazio: ponto no centro. Captura: anel nos cantos. */
+.dest::after {
+  content: "";
+  position: absolute;
+  width: 30%;
+  height: 30%;
+  border-radius: 50%;
+  background: var(--hint);
+}
+
+.capture::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle, transparent 62%, var(--hint) 63%);
+}
+
+.piece {
+  position: relative;
+  z-index: 1;
+  font-family: "Segoe UI Symbol", "Noto Sans Symbols 2", "DejaVu Sans", "Apple Symbols", serif;
+  font-size: 9.6cqi;
+  line-height: 1;
+  user-select: none;
+  pointer-events: none;
+}
+
+.white {
+  color: var(--piece-white);
+  -webkit-text-stroke: 0.06em var(--piece-white-edge);
+  paint-order: stroke fill;
+}
+
+.black {
+  color: var(--piece-black);
+  -webkit-text-stroke: 0.03em var(--piece-black-edge);
+  paint-order: stroke fill;
+}
+
+.fileLabel,
+.rankLabel {
+  position: absolute;
+  font-size: 2.2cqi;
+  font-weight: 600;
+  line-height: 1;
+  pointer-events: none;
+  opacity: 0.75;
+}
+
+.fileLabel {
+  right: 4%;
+  bottom: 4%;
+}
+
+.rankLabel {
+  left: 4%;
+  top: 4%;
+}
+
+.light .fileLabel,
+.light .rankLabel {
+  color: var(--square-dark);
+}
+
+.dark .fileLabel,
+.dark .rankLabel {
+  color: var(--square-light);
+}
+
+.promotionBackdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  background: var(--scrim);
+}
+
+.promotion {
+  padding: 1rem 1.25rem 1.25rem;
+  border-radius: 8px;
+  background: var(--surface);
+  box-shadow: 0 12px 40px var(--shadow);
+}
+
+.promotionTitle {
+  margin: 0 0 0.75rem;
+  font-size: 0.95rem;
+  color: var(--text-muted);
+}
+
+.promotionChoices {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.5rem;
+}
+
+.promotionChoice {
+  display: grid;
+  place-items: center;
+  width: 12cqi;
+  height: 12cqi;
+  min-width: 48px;
+  min-height: 48px;
+  border: 0;
+  border-radius: 6px;
+  background: var(--square-dark);
+  cursor: pointer;
+}
+
+.promotionChoice:hover {
+  background: var(--square-light);
+}
+
+.promotionChoice:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.promotionChoice .piece {
+  font-size: max(8cqi, 32px);
+}
