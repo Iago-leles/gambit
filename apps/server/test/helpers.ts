@@ -1,3 +1,5 @@
+import { randomBytes } from "node:crypto";
+import { request, type IncomingHttpHeaders } from "node:http";
 import { fileURLToPath } from "node:url";
 import {
   encodeMessage,
@@ -26,6 +28,74 @@ export async function createRoom(base: URL, rules: unknown = {}) {
     body: JSON.stringify(rules),
   });
   return { status: res.status, body: await res.json<Record<string, unknown>>() };
+}
+
+interface RawResponse {
+  status: number;
+  headers: IncomingHttpHeaders;
+  body: string;
+}
+
+/**
+ * Pedido HTTP com cabeçalhos livres. O `fetch` do Node pode descartar `Origin`,
+ * então os testes de origem usam `node:http`, que manda exatamente o que pedimos.
+ */
+export function httpRequest(
+  base: URL,
+  options: { method: string; path: string; headers?: Record<string, string>; body?: string },
+): Promise<RawResponse> {
+  return new Promise((resolve, reject) => {
+    const req = request(
+      {
+        host: base.hostname,
+        port: base.port,
+        method: options.method,
+        path: options.path,
+        headers: options.headers ?? {},
+      },
+      (res) => {
+        const chunks: Buffer[] = [];
+        res.on("data", (chunk: Buffer) => chunks.push(chunk));
+        res.on("end", () => {
+          resolve({
+            status: res.statusCode ?? 0,
+            headers: res.headers,
+            body: Buffer.concat(chunks).toString("utf8"),
+          });
+        });
+      },
+    );
+    req.on("error", reject);
+    req.end(options.body);
+  });
+}
+
+/** Tenta abrir um WebSocket com a `Origin` dada. Devolve o status: 101 se abriu. */
+export function tryUpgrade(base: URL, path: string, origin?: string): Promise<{ status: number }> {
+  return new Promise((resolve, reject) => {
+    const req = request({
+      host: base.hostname,
+      port: base.port,
+      path,
+      headers: {
+        connection: "Upgrade",
+        upgrade: "websocket",
+        "sec-websocket-version": "13",
+        "sec-websocket-key": randomBytes(16).toString("base64"),
+        ...(origin !== undefined && { origin }),
+      },
+    });
+    req.on("upgrade", (res, socket) => {
+      socket.destroy();
+      resolve({ status: res.statusCode ?? 0 });
+    });
+    req.on("response", (res) => {
+      res.resume();
+      resolve({ status: res.statusCode ?? 0 });
+    });
+    req.on("error", reject);
+    req.end();
+  });
 }
 
 /** Cliente WebSocket de teste: guarda as mensagens e espera pela próxima que satisfaz um filtro. */

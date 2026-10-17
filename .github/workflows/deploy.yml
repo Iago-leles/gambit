@@ -51,6 +51,30 @@ jobs:
             --header "content-type: application/json" \
             --data '{"variant":"shogi"}')
           test "$status" = "400" || { echo "::error::Esperava 400 do servidor, veio $status"; exit 1; }
+      - name: Testar o CORS no ar
+        # Site de fora é recusado (HTTP e WebSocket). Os nossos sites são aceitos.
+        run: |
+          evil=$(curl --silent --output /dev/null --write-out "%{http_code}" \
+            --request OPTIONS "$SERVER_URL/api/rooms" \
+            --header "Origin: https://evil.example")
+          test "$evil" = "403" || { echo "::error::Site de fora devia receber 403, veio $evil"; exit 1; }
+
+          ws=$(curl --silent --output /dev/null --write-out "%{http_code}" \
+            "$SERVER_URL/parties/room/ABCDEF" \
+            --header "Connection: Upgrade" \
+            --header "Upgrade: websocket" \
+            --header "Sec-WebSocket-Version: 13" \
+            --header "Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==" \
+            --header "Origin: https://evil.example")
+          test "$ws" = "403" || { echo "::error::WebSocket de site de fora devia receber 403, veio $ws"; exit 1; }
+
+          for origin in "$WEB_URL" "https://gambit.iagoleles.com"; do
+            headers=$(curl --silent --dump-header - --output /dev/null \
+              --request OPTIONS "$SERVER_URL/api/rooms" \
+              --header "Origin: $origin" | tr -d "\r")
+            echo "$headers" | grep --ignore-case --quiet "^access-control-allow-origin: $origin$" \
+              || { echo "::error::A origem $origin devia ser aceita"; echo "$headers"; exit 1; }
+          done
 
   web:
     # O site aponta para o servidor, então o servidor sobe primeiro.

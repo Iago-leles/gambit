@@ -85,6 +85,24 @@ Quem quiser publicar da própria máquina precisa do WSL. Clone o repositório d
 
 O servidor não tem esse problema e pode ser publicado do Windows.
 
+## Quais sites podem falar com o servidor (CORS)
+
+O servidor só aceita pedidos de navegador vindos de sites da lista `ALLOWED_ORIGINS`, em `apps/server/wrangler.jsonc`. Vale para a criação de sala (HTTP) e para o WebSocket.
+
+Hoje a lista tem:
+
+- `https://gambit-web.iago-leles.workers.dev`
+- `https://gambit.iagoleles.com`
+
+As regras:
+
+- Site que não está na lista recebe `403`.
+- Pedido sem o cabeçalho `Origin` passa. Não é de navegador (curl, CI, testes). O cabeçalho protege os jogadores contra outros sites, não funciona como senha.
+- Origens `localhost`, `127.0.0.1` e `[::1]` só valem quando o próprio servidor roda local. Em produção, são recusadas.
+- A resposta devolve a origem do pedido, nunca `*`.
+
+**Mudou o endereço do site?** Atualize `ALLOWED_ORIGINS` junto com a mudança. Se esquecer, o site para de funcionar: o navegador recebe `403` e a sala não abre. O workflow de deploy testa as duas origens e falha se alguma for recusada.
+
 ## Limites do plano gratuito
 
 - 100.000 requisições por dia nos Durable Objects, contando as mensagens de WebSocket.
@@ -93,5 +111,4 @@ O servidor não tem esse problema e pode ser publicado do Windows.
 
 ## Pendente
 
-- Restringir o CORS do servidor à origem do site. Hoje aceita qualquer origem (`*`).
 - Limite de uso por IP em `POST /api/rooms`.
