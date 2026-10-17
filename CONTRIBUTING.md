@@ -37,6 +37,14 @@ pnpm check
 
 Roda typecheck, lint, formatação e testes. É o mesmo que o CI roda.
 
+Mexeu em algo que o jogador vê? Rode também o E2E:
+
+```bash
+pnpm test:e2e
+```
+
+Ele sobe o servidor (porta 8788) e o web (porta 3100) sozinho, e joga com dois navegadores. Na primeira vez, instale o Chromium com `pnpm exec playwright install chromium`.
+
 ## Testes
 
 Código novo nasce com teste escrito antes (TDD). O `core` é a parte mais testada do projeto.
