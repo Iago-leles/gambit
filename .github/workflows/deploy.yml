@@ -59,7 +59,9 @@ jobs:
             --header "Origin: https://evil.example")
           test "$evil" = "403" || { echo "::error::Site de fora devia receber 403, veio $evil"; exit 1; }
 
-          ws=$(curl --silent --output /dev/null --write-out "%{http_code}" \
+          # HTTP/1.1 de propósito: no HTTP/2 o curl descarta o cabeçalho Upgrade, o Worker
+          # recebe um GET comum e o teste não prova nada sobre o WebSocket.
+          ws=$(curl --silent --http1.1 --output /dev/null --write-out "%{http_code}" \
             "$SERVER_URL/parties/room/ABCDEF" \
             --header "Connection: Upgrade" \
             --header "Upgrade: websocket" \
