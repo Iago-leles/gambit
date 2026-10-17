@@ -7,6 +7,28 @@ Tudo roda no plano gratuito (ADR 010). São dois Workers:
 | `apps/server` | `gambit-server` | API de criação de sala e os Durable Objects das salas |
 | `apps/web`    | `gambit-web`    | O site (Next.js, pelo OpenNext)                       |
 
+## Como o deploy acontece
+
+O deploy é **automático**. Quando um PR entra na `main`, o workflow `.github/workflows/deploy.yml` publica o servidor e depois o site. Leva uns 3 minutos. Também dá para rodar pelo botão "Run workflow", na aba Actions do GitHub.
+
+Ele testa o resultado no ar: o servidor deve responder `400` a regras inválidas, e o site deve abrir com o texto "Gambit". Se algo falhar, a versão anterior continua no ar.
+
+Os comandos manuais mais abaixo servem para o servidor, ou para quem usa Linux ou WSL. No Windows, o site só publica pelo GitHub (veja "Windows").
+
+## Configurar o deploy automático (uma vez só)
+
+O GitHub precisa de permissão para publicar na sua conta da Cloudflare.
+
+1. **Criar o token.** No painel da Cloudflare: My Profile, API Tokens, Create Token. Use o modelo **Edit Cloudflare Workers**.
+2. **Pegar o ID da conta.** Rode `pnpm --filter @gambit/server exec wrangler whoami`. O ID aparece na tabela.
+3. **Guardar no GitHub.** No repositório: Settings, Secrets and variables, Actions, New repository secret. Crie dois segredos:
+   - `CLOUDFLARE_API_TOKEN`
+   - `CLOUDFLARE_ACCOUNT_ID`
+
+Cole o token só nesse campo do GitHub. Nunca em chat, issue ou commit.
+
+Sem os segredos, o workflow falha logo no início, com uma mensagem dizendo qual está faltando.
+
 ## Endereços
 
 - Servidor: `https://gambit-server.iago-leles.workers.dev`
@@ -52,12 +74,16 @@ pnpm --filter @gambit/web preview
 
 ### Windows
 
-O build do OpenNext cria links simbólicos. No Windows, isso dá o erro `EPERM` se o Modo Desenvolvedor estiver desligado. Há dois caminhos:
+O build do site com OpenNext **não funciona de forma confiável no Windows**, mesmo com permissão de administrador ou com o Modo Desenvolvedor ligado:
 
-1. **Modo Desenvolvedor.** Ative em Configurações, Privacidade e segurança, Para desenvolvedores. Depois feche e abra o terminal.
-2. **WSL.** Clone o repositório dentro do Ubuntu e rode os mesmos comandos de lá. Não use a pasta `/mnt/c`.
+- Sem permissão, ele falha com `EPERM` ao criar links simbólicos.
+- Com permissão, ele falha mais adiante, com `Acesso negado` ao ler as pastas ligadas por link.
 
-O CI roda o mesmo build no Linux a cada PR (job `cloudflare-build`). Se ele passa, a configuração está certa. Só o seu computador precisa da permissão.
+O OpenNext avisa isso na própria saída ("not fully compatible with Windows"). Por isso o site é publicado pelo GitHub, que roda no Linux. O mesmo build roda a cada PR no job `cloudflare-build` do CI.
+
+Quem quiser publicar da própria máquina precisa do WSL. Clone o repositório dentro do Ubuntu, fora de `/mnt/c`, e rode os mesmos comandos de lá.
+
+O servidor não tem esse problema e pode ser publicado do Windows.
 
 ## Limites do plano gratuito
 
@@ -69,4 +95,3 @@ O CI roda o mesmo build no Linux a cada PR (job `cloudflare-build`). Se ele pass
 
 - Restringir o CORS do servidor à origem do site. Hoje aceita qualquer origem (`*`).
 - Limite de uso por IP em `POST /api/rooms`.
-- Deploy automático pelo GitHub Actions, com um token da Cloudflare em segredo.
