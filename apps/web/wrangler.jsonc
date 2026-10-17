@@ -8,5 +8,9 @@
     "directory": ".open-next/assets",
     "binding": "ASSETS",
   },
+  // Domínio próprio. No deploy, a Cloudflare cria o registro DNS e o certificado.
+  // O endereço do workers.dev continua ligado. Se este nome mudar, atualize também
+  // ALLOWED_ORIGINS em apps/server/wrangler.jsonc e as URLs de .github/workflows/deploy.yml.
+  "routes": [{ "pattern": "gambit.iagoleles.com", "custom_domain": true }],
   "observability": { "enabled": true },
 }

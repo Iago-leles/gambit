@@ -32,7 +32,25 @@ Sem os segredos, o workflow falha logo no início, com uma mensagem dizendo qual
 ## Endereços
 
 - Servidor: `https://gambit-server.iago-leles.workers.dev`
-- Site: `https://gambit-web.iago-leles.workers.dev` (depois do primeiro deploy)
+- Site (principal): `https://gambit.iagoleles.com`
+- Site (endereço antigo, continua no ar): `https://gambit-web.iago-leles.workers.dev`
+
+### Domínio próprio
+
+O domínio `iagoleles.com` está na mesma conta da Cloudflare. O site usa o nome `gambit.iagoleles.com`, definido em `apps/web/wrangler.jsonc`:
+
+```jsonc
+"routes": [{ "pattern": "gambit.iagoleles.com", "custom_domain": true }]
+```
+
+No deploy, a Cloudflare cria o registro DNS e o certificado sozinha. Não precisa mexer no painel de DNS.
+
+Cuidados:
+
+- O nome não pode ter um registro **CNAME** que já exista no DNS. O deploy falha se tiver.
+- O token do deploy precisa da permissão de rotas da zona (`Zone`, `Workers Routes`, `Edit`). O modelo "Edit Cloudflare Workers", com `All zones`, já traz isso.
+- Na primeira vez, o certificado pode levar alguns minutos. O teste do deploy tenta por até 2 minutos e meio.
+- **Mudar o nome?** Atualize três lugares, juntos: a rota em `apps/web/wrangler.jsonc`, `ALLOWED_ORIGINS` em `apps/server/wrangler.jsonc` e `WEB_URL` em `.github/workflows/deploy.yml`. Se esquecer o do servidor, o site para de funcionar.
 
 ## Antes de tudo
 
@@ -91,8 +109,8 @@ O servidor só aceita pedidos de navegador vindos de sites da lista `ALLOWED_ORI
 
 Hoje a lista tem:
 
-- `https://gambit-web.iago-leles.workers.dev`
 - `https://gambit.iagoleles.com`
+- `https://gambit-web.iago-leles.workers.dev`
 
 As regras:
 

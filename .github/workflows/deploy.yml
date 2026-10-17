@@ -20,7 +20,9 @@ permissions:
 
 env:
   SERVER_URL: https://gambit-server.iago-leles.workers.dev
-  WEB_URL: https://gambit-web.iago-leles.workers.dev
+  # Endereço principal do site e o endereço antigo, que continua no ar.
+  WEB_URL: https://gambit.iagoleles.com
+  WEB_URL_WORKERS_DEV: https://gambit-web.iago-leles.workers.dev
 
 jobs:
   server:
@@ -70,7 +72,7 @@ jobs:
             --header "Origin: https://evil.example")
           test "$ws" = "403" || { echo "::error::WebSocket de site de fora devia receber 403, veio $ws"; exit 1; }
 
-          for origin in "$WEB_URL" "https://gambit.iagoleles.com"; do
+          for origin in "$WEB_URL" "$WEB_URL_WORKERS_DEV"; do
             headers=$(curl --silent --dump-header - --output /dev/null \
               --request OPTIONS "$SERVER_URL/api/rooms" \
               --header "Origin: $origin" | tr -d "\r")
@@ -96,7 +98,12 @@ jobs:
       - name: Publicar o site
         run: pnpm --filter @gambit/web release
       - name: Testar o site no ar
+        # O domínio novo pode levar uns minutos para ter DNS e certificado. Por isso,
+        # até 10 tentativas com 15 s entre elas. O endereço antigo deve responder já.
         run: |
-          curl --fail --silent --show-error \
-            --retry 5 --retry-delay 5 --retry-all-errors \
-            "$WEB_URL/" | grep --quiet "Gambit"
+          for url in "$WEB_URL" "$WEB_URL_WORKERS_DEV"; do
+            curl --fail --silent --show-error \
+              --retry 10 --retry-delay 15 --retry-all-errors \
+              "$url/" | grep --quiet "Gambit" \
+              || { echo "::error::O site não respondeu em $url"; exit 1; }
+          done
