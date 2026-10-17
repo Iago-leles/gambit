@@ -39,6 +39,8 @@ export function Board3DView({
           pieces={pieces}
           orientation={orientation}
           highlights={highlights}
+          selected={selected}
+          dests={dests}
           onSquareClick={onSquareClick}
         />
       </div>

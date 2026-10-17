@@ -67,6 +67,7 @@ export function CameraRig({ orientation }: { orientation: Color }) {
 
   return (
     <OrbitControls
+      makeDefault
       ref={controls}
       enablePan={false}
       minDistance={9}
