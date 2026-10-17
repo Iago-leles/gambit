@@ -19,10 +19,19 @@ export interface SceneProps {
   pieces: ReadonlyMap<string, BoardPiece>;
   orientation: Color;
   highlights: HighlightsData;
+  selected: string | null;
+  dests: readonly string[];
   onSquareClick: (square: string) => void;
 }
 
-export default function Scene({ pieces, orientation, highlights, onSquareClick }: SceneProps) {
+export default function Scene({
+  pieces,
+  orientation,
+  highlights,
+  selected,
+  dests,
+  onSquareClick,
+}: SceneProps) {
   return (
     <Canvas
       frameloop="demand"
@@ -43,7 +52,7 @@ export default function Scene({ pieces, orientation, highlights, onSquareClick }
       <directionalLight position={[5, 10, 6]} intensity={2.2} />
       <Board3D onSquareClick={onSquareClick} />
       <Highlights {...highlights} />
-      <Pieces pieces={pieces} onSquareClick={onSquareClick} />
+      <Pieces pieces={pieces} selected={selected} dests={dests} onSquareClick={onSquareClick} />
       <ContactShadows
         position={[0, 0.005, 0]}
         scale={9}

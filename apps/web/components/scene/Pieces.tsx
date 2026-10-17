@@ -22,6 +22,7 @@ import {
 import { groupPieces, squareToPosition } from "@/lib/board-3d";
 import type { BoardPiece, Role } from "@/lib/board-view";
 import { createPieceGeometry } from "./piece-geometry";
+import { DRAG_LIFT, useDrag, type DragHandlers } from "./useDrag";
 
 const ROLES: readonly Role[] = ["king", "queen", "rook", "bishop", "knight", "pawn"];
 
@@ -35,10 +36,14 @@ const dummy = new Object3D();
 
 interface PiecesProps {
   pieces: ReadonlyMap<string, BoardPiece>;
+  selected: string | null;
+  dests: readonly string[];
   onSquareClick: (square: string) => void;
 }
 
-export function Pieces({ pieces, onSquareClick }: PiecesProps) {
+export function Pieces({ pieces, selected, dests, onSquareClick }: PiecesProps) {
+  const { dragging, ghost, handlers } = useDrag({ selected, dests, onSquareClick });
+  const dragSquare = dragging?.square;
   const geometries = useMemo(
     () =>
       Object.fromEntries(ROLES.map((role) => [role, createPieceGeometry(role)])) as Record<
@@ -88,11 +93,12 @@ export function Pieces({ pieces, onSquareClick }: PiecesProps) {
   const groups = useMemo(() => {
     // A peça que está andando sai do instanciamento até chegar.
     const hidden = new Set(movers.map((mover) => mover.to));
+    if (dragSquare) hidden.add(dragSquare);
     return groupPieces(pieces).map((group) => ({
       ...group,
       squares: group.squares.filter((square) => !hidden.has(square)),
     }));
-  }, [pieces, movers]);
+  }, [pieces, movers, dragSquare]);
 
   return (
     <>
@@ -104,9 +110,24 @@ export function Pieces({ pieces, onSquareClick }: PiecesProps) {
           squares={squares}
           // As pretas olham para as brancas.
           rotationY={color === "black" ? Math.PI : 0}
+          pieces={pieces}
+          drag={handlers}
           onSquareClick={onSquareClick}
         />
       ))}
+      {dragging && (
+        <mesh
+          ref={ghost}
+          geometry={geometries[dragging.role]}
+          material={materials[dragging.color]}
+          position={[
+            squareToPosition(dragging.square).x,
+            DRAG_LIFT,
+            squareToPosition(dragging.square).z,
+          ]}
+          rotation={[0, dragging.color === "black" ? Math.PI : 0, 0]}
+        />
+      )}
       {movers.map((mover) => (
         <Mover
           key={mover.key}
@@ -178,10 +199,20 @@ interface PieceGroupProps {
   material: MeshStandardMaterial;
   squares: string[];
   rotationY: number;
+  pieces: ReadonlyMap<string, BoardPiece>;
+  drag: DragHandlers;
   onSquareClick: (square: string) => void;
 }
 
-function PieceGroup({ geometry, material, squares, rotationY, onSquareClick }: PieceGroupProps) {
+function PieceGroup({
+  geometry,
+  material,
+  squares,
+  rotationY,
+  pieces,
+  drag,
+  onSquareClick,
+}: PieceGroupProps) {
   const mesh = useRef<InstancedMesh>(null);
   const invalidate = useThree((state) => state.invalidate);
 
@@ -205,6 +236,14 @@ function PieceGroup({ geometry, material, squares, rotationY, onSquareClick }: P
     <instancedMesh
       ref={mesh}
       args={[geometry, material, CAPACITY]}
+      onPointerDown={(event) => {
+        const square = event.instanceId === undefined ? undefined : squares[event.instanceId];
+        const piece = square ? pieces.get(square) : undefined;
+        if (square && piece) drag.onPointerDown(square, piece, event);
+      }}
+      onPointerMove={drag.onPointerMove}
+      onPointerUp={drag.onPointerUp}
+      onPointerCancel={drag.onPointerCancel}
       onClick={(event) => {
         event.stopPropagation();
         if (event.delta > 4 || event.instanceId === undefined) return;
