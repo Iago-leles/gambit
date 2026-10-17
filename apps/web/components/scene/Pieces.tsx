@@ -1,9 +1,24 @@
 "use client";
 
-import { useThree } from "@react-three/fiber";
-import { useEffect, useLayoutEffect, useMemo, useRef } from "react";
-import { MeshStandardMaterial, Object3D, type BufferGeometry, type InstancedMesh } from "three";
+import { useFrame, useThree } from "@react-three/fiber";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import {
+  MeshStandardMaterial,
+  Object3D,
+  type BufferGeometry,
+  type InstancedMesh,
+  type Mesh,
+} from "three";
 import type { Color } from "@gambit/core";
+import {
+  arcPosition,
+  detectMoves,
+  moveDistance,
+  moveDuration,
+  prefersReducedMotion,
+  type PieceMove,
+  type Vec3,
+} from "@/lib/animation";
 import { groupPieces, squareToPosition } from "@/lib/board-3d";
 import type { BoardPiece, Role } from "@/lib/board-view";
 import { createPieceGeometry } from "./piece-geometry";
@@ -49,7 +64,35 @@ export function Pieces({ pieces, onSquareClick }: PiecesProps) {
     [geometries, materials],
   );
 
-  const groups = useMemo(() => groupPieces(pieces), [pieces]);
+  // Animação é só vista: a posição verdadeira vem sempre das props (ADR 009).
+  // Estado derivado durante a renderização, o padrão do React para reagir a uma prop nova.
+  const [tracked, setTracked] = useState(pieces);
+  const [version, setVersion] = useState(0);
+  const [movers, setMovers] = useState<ActiveMove[]>([]);
+  if (tracked !== pieces) {
+    const id = version + 1;
+    const reduced = prefersReducedMotion();
+    setTracked(pieces);
+    setVersion(id);
+    setMovers(
+      detectMoves(tracked, pieces).flatMap((move) => {
+        const piece = pieces.get(move.to);
+        const duration = moveDuration(moveDistance(move), reduced) * 1000;
+        return piece && duration > 0
+          ? [{ ...move, ...piece, duration, key: `${id}:${move.to}` }]
+          : [];
+      }),
+    );
+  }
+
+  const groups = useMemo(() => {
+    // A peça que está andando sai do instanciamento até chegar.
+    const hidden = new Set(movers.map((mover) => mover.to));
+    return groupPieces(pieces).map((group) => ({
+      ...group,
+      squares: group.squares.filter((square) => !hidden.has(square)),
+    }));
+  }, [pieces, movers]);
 
   return (
     <>
@@ -64,7 +107,69 @@ export function Pieces({ pieces, onSquareClick }: PiecesProps) {
           onSquareClick={onSquareClick}
         />
       ))}
+      {movers.map((mover) => (
+        <Mover
+          key={mover.key}
+          move={mover}
+          geometry={geometries[mover.role]}
+          material={materials[mover.color]}
+          onDone={(key) => {
+            setMovers((current) => current.filter((m) => m.key !== key));
+          }}
+        />
+      ))}
     </>
+  );
+}
+
+interface ActiveMove extends PieceMove, BoardPiece {
+  key: string;
+  duration: number;
+}
+
+/** Altura do arco, em casas. */
+const LIFT = 0.8;
+
+interface MoverProps {
+  move: ActiveMove;
+  geometry: BufferGeometry;
+  material: MeshStandardMaterial;
+  onDone: (key: string) => void;
+}
+
+/** A peça em movimento: sobe, desliza e desce. Não cria objetos a cada quadro. */
+function Mover({ move, geometry, material, onDone }: MoverProps) {
+  const mesh = useRef<Mesh>(null);
+  const startedAt = useRef<number | null>(null);
+  const out = useRef<Vec3>({ x: 0, y: 0, z: 0 });
+  const from = useMemo(() => squareToPosition(move.from), [move.from]);
+  const to = useMemo(() => squareToPosition(move.to), [move.to]);
+  const invalidate = useThree((state) => state.invalidate);
+
+  useLayoutEffect(() => {
+    invalidate();
+  }, [invalidate]);
+
+  useFrame(() => {
+    const current = mesh.current;
+    if (!current) return;
+    const now = performance.now();
+    startedAt.current ??= now;
+    const t = Math.min(1, (now - startedAt.current) / move.duration);
+    arcPosition(t, from, to, LIFT, out.current);
+    current.position.set(out.current.x, out.current.y, out.current.z);
+    if (t >= 1) onDone(move.key);
+    else invalidate();
+  });
+
+  return (
+    <mesh
+      ref={mesh}
+      geometry={geometry}
+      material={material}
+      position={[from.x, 0, from.z]}
+      rotation={[0, move.color === "black" ? Math.PI : 0, 0]}
+    />
   );
 }
 
