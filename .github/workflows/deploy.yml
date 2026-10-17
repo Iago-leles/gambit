@@ -57,32 +57,53 @@ jobs:
       - name: Testar o CORS no ar
         # Site de fora é recusado (HTTP e WebSocket). O nosso site é aceito. O endereço antigo é recusado.
         run: |
-          evil=$(curl --silent --output /dev/null --write-out "%{http_code}" \
+          # O deploy leva alguns segundos para chegar a todos os pontos da Cloudflare. Nesse
+          # intervalo, alguns ainda respondem com a versão anterior. Por isso cada conferência
+          # tenta de novo, por até 1 minuto, antes de falhar.
+          # Uso: expect_code <código esperado> "<mensagem>" <argumentos do curl>
+          expect_code() {
+            expected=$1
+            message=$2
+            shift 2
+            for attempt in $(seq 1 12); do
+              code=$(curl --silent --output /dev/null --write-out "%{http_code}" "$@" || true)
+              test "$code" = "$expected" && return 0
+              sleep 5
+            done
+            echo "::error::$message (esperado $expected, veio $code)"
+            return 1
+          }
+
+          expect_code 403 "Site de fora devia ser recusado" \
             --request OPTIONS "$SERVER_URL/api/rooms" \
-            --header "Origin: https://evil.example")
-          test "$evil" = "403" || { echo "::error::Site de fora devia receber 403, veio $evil"; exit 1; }
+            --header "Origin: https://evil.example"
 
           # HTTP/1.1 de propósito: no HTTP/2 o curl descarta o cabeçalho Upgrade, o Worker
           # recebe um GET comum e o teste não prova nada sobre o WebSocket.
-          ws=$(curl --silent --http1.1 --output /dev/null --write-out "%{http_code}" \
-            "$SERVER_URL/parties/room/ABCDEF" \
+          expect_code 403 "WebSocket de site de fora devia ser recusado" \
+            --http1.1 "$SERVER_URL/parties/room/ABCDEF" \
             --header "Connection: Upgrade" \
             --header "Upgrade: websocket" \
             --header "Sec-WebSocket-Version: 13" \
             --header "Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==" \
-            --header "Origin: https://evil.example")
-          test "$ws" = "403" || { echo "::error::WebSocket de site de fora devia receber 403, veio $ws"; exit 1; }
+            --header "Origin: https://evil.example"
 
-          headers=$(curl --silent --dump-header - --output /dev/null \
-            --request OPTIONS "$SERVER_URL/api/rooms" \
-            --header "Origin: $WEB_URL" | tr -d "\r")
-          echo "$headers" | grep --ignore-case --quiet "^access-control-allow-origin: $WEB_URL$" \
-            || { echo "::error::A origem $WEB_URL devia ser aceita"; echo "$headers"; exit 1; }
+          accepted=no
+          for attempt in $(seq 1 12); do
+            headers=$(curl --silent --dump-header - --output /dev/null \
+              --request OPTIONS "$SERVER_URL/api/rooms" \
+              --header "Origin: $WEB_URL" | tr -d "\r")
+            if echo "$headers" | grep --ignore-case --quiet "^access-control-allow-origin: $WEB_URL$"; then
+              accepted=yes
+              break
+            fi
+            sleep 5
+          done
+          test "$accepted" = "yes" || { echo "::error::A origem $WEB_URL devia ser aceita"; echo "$headers"; exit 1; }
 
-          old=$(curl --silent --output /dev/null --write-out "%{http_code}" \
+          expect_code 403 "O endereço antigo do site devia ser recusado" \
             --request OPTIONS "$SERVER_URL/api/rooms" \
-            --header "Origin: $OLD_WEB_URL")
-          test "$old" = "403" || { echo "::error::O endereço antigo do site devia receber 403, veio $old"; exit 1; }
+            --header "Origin: $OLD_WEB_URL"
 
   web:
     # O site aponta para o servidor, então o servidor sobe primeiro.
