@@ -26,16 +26,25 @@ export function squareFromPosition(x: number, z: number): string | undefined {
 export const CAMERA_AZIMUTH: Record<Color, number> = { white: 0, black: Math.PI };
 
 /** Posição da câmera em coordenadas esféricas em volta do centro do tabuleiro. */
+export function cameraPositionInto(
+  out: { x: number; y: number; z: number },
+  azimuth: number,
+  polar: number,
+  distance: number,
+): void {
+  out.x = distance * Math.sin(polar) * Math.sin(azimuth);
+  out.y = distance * Math.cos(polar);
+  out.z = distance * Math.sin(polar) * Math.cos(azimuth);
+}
+
 export function cameraPosition(
   azimuth: number,
   polar: number,
   distance: number,
 ): [number, number, number] {
-  return [
-    distance * Math.sin(polar) * Math.sin(azimuth),
-    distance * Math.cos(polar),
-    distance * Math.sin(polar) * Math.cos(azimuth),
-  ];
+  const out = { x: 0, y: 0, z: 0 };
+  cameraPositionInto(out, azimuth, polar, distance);
+  return [out.x, out.y, out.z];
 }
 
 export interface PieceGroup {
