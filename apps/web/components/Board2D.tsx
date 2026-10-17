@@ -3,6 +3,7 @@
 import type { Color } from "@gambit/core";
 import { useEffect, useRef } from "react";
 import { isLightSquare, squaresFor, type BoardPiece, type Role } from "@/lib/board-view";
+import { pieceLabel, ROLE_NAME } from "./piece-label";
 import styles from "./Board2D.module.css";
 
 /**
@@ -18,15 +19,6 @@ const GLYPH: Record<Role, string> = {
   bishop: "♝︎",
   knight: "♞︎",
   pawn: "♟︎",
-};
-
-const ROLE_NAME: Record<Role, string> = {
-  king: "rei",
-  queen: "dama",
-  rook: "torre",
-  bishop: "bispo",
-  knight: "cavalo",
-  pawn: "peão",
 };
 
 const PROMOTION_ROLES = [
@@ -51,11 +43,6 @@ export interface Board2DProps {
     onChoose: (choice: PromotionChoice) => void;
     onCancel: () => void;
   };
-}
-
-function pieceLabel(piece: BoardPiece): string {
-  const color = piece.color === "white" ? "branco" : "preto";
-  return `${ROLE_NAME[piece.role]} ${color}`;
 }
 
 export function Board2D({
@@ -124,7 +111,11 @@ export function Board2D({
   );
 }
 
-function PromotionPicker({ color, onChoose, onCancel }: NonNullable<Board2DProps["promotion"]>) {
+export function PromotionPicker({
+  color,
+  onChoose,
+  onCancel,
+}: NonNullable<Board2DProps["promotion"]>) {
   const first = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {

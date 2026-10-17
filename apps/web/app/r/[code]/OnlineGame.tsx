@@ -12,10 +12,12 @@ import Link from "next/link";
 import PartySocket from "partysocket";
 import { useEffect, useState } from "react";
 import { useStore } from "zustand";
-import { Board2D } from "@/components/Board2D";
+import { BoardView } from "@/components/BoardView";
 import { ClockFace } from "@/components/ClockFace";
 import styles from "@/components/GameLayout.module.css";
 import { MoveList } from "@/components/MoveList";
+import { useViewMode } from "@/components/useViewMode";
+import { ViewToggle } from "@/components/ViewToggle";
 import { SERVER_URL } from "@/lib/api";
 import { createOnlineGameStore, type OnlineGameState } from "@/lib/online-game-store";
 import { loadSeatToken, saveSeatToken } from "@/lib/seat-tokens";
@@ -89,6 +91,7 @@ function statusText(state: OnlineGameState): string {
 
 export function OnlineGame({ code }: { code: string }) {
   const state = useOnlineGame(code);
+  const [view, setView] = useViewMode();
   const { snapshot, role, game, orientation, error } = state;
   const isPlayer = role === "white" || role === "black";
   const isOver = Boolean(snapshot?.result);
@@ -114,7 +117,8 @@ export function OnlineGame({ code }: { code: string }) {
   return (
     <main className={styles.layout}>
       <div className={styles.boardArea}>
-        <Board2D
+        <BoardView
+          view={view}
           pieces={state.pieces}
           orientation={orientation}
           selected={state.selected}
@@ -184,6 +188,7 @@ export function OnlineGame({ code }: { code: string }) {
           <button type="button" className={styles.button} onClick={state.flip}>
             Virar tabuleiro
           </button>
+          <ViewToggle view={view} onChange={setView} />
           {isPlayer && snapshot?.status === "playing" && !isOver && (
             <>
               <DrawButtons state={state} />
