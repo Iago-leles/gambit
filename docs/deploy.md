@@ -32,8 +32,9 @@ Sem os segredos, o workflow falha logo no início, com uma mensagem dizendo qual
 ## Endereços
 
 - Servidor: `https://gambit-server.iago-leles.workers.dev`
-- Site (principal): `https://gambit.iagoleles.com`
-- Site (endereço antigo, continua no ar): `https://gambit-web.iago-leles.workers.dev`
+- Site: `https://gambit.iagoleles.com`
+
+O site responde só nesse endereço. O antigo (`gambit-web.iago-leles.workers.dev`) e os endereços de pré-visualização estão desligados. O servidor continua em `workers.dev`: os jogadores nunca o veem, porque só o site fala com ele.
 
 ### Domínio próprio
 
@@ -47,7 +48,8 @@ No deploy, a Cloudflare cria o registro DNS e o certificado sozinha. Não precis
 
 Cuidados:
 
-- O endereço do `workers.dev` só continua no ar por causa de `"workers_dev": true`. Quando há `routes`, o Wrangler desliga o `workers.dev` sozinho, e o endereço antigo passa a dar `404`. Quem apagar essa linha desliga o endereço antigo no próximo deploy.
+- O `workers.dev` do site está desligado de propósito, com `"workers_dev": false` e `"preview_urls": false`. O Wrangler já desliga o `workers.dev` sozinho quando há `routes`, mas não muda uma configuração de preview que já existe. Por isso as duas linhas ficam escritas.
+- Para religar o `workers.dev`: troque para `"workers_dev": true` **e** inclua a origem em `ALLOWED_ORIGINS`. Sem a segunda parte, o site abre mas o servidor recusa tudo.
 - O nome não pode ter um registro **CNAME** que já exista no DNS. O deploy falha se tiver.
 - O token do deploy precisa da permissão de rotas da zona (`Zone`, `Workers Routes`, `Edit`). O modelo "Edit Cloudflare Workers", com `All zones`, já traz isso.
 - Na primeira vez, o certificado pode levar alguns minutos. O teste do deploy tenta por até 2 minutos e meio.
@@ -111,7 +113,6 @@ O servidor só aceita pedidos de navegador vindos de sites da lista `ALLOWED_ORI
 Hoje a lista tem:
 
 - `https://gambit.iagoleles.com`
-- `https://gambit-web.iago-leles.workers.dev`
 
 As regras:
 
@@ -120,7 +121,7 @@ As regras:
 - Origens `localhost`, `127.0.0.1` e `[::1]` só valem quando o próprio servidor roda local. Em produção, são recusadas.
 - A resposta devolve a origem do pedido, nunca `*`.
 
-**Mudou o endereço do site?** Atualize `ALLOWED_ORIGINS` junto com a mudança. Se esquecer, o site para de funcionar: o navegador recebe `403` e a sala não abre. O workflow de deploy testa as duas origens e falha se alguma for recusada.
+**Mudou o endereço do site?** Atualize `ALLOWED_ORIGINS` junto com a mudança. Se esquecer, o site para de funcionar: o navegador recebe `403` e a sala não abre. O workflow de deploy confere que o site é aceito e que o endereço antigo é recusado, e falha se não for assim.
 
 ## Limites do plano gratuito
 

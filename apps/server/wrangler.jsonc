@@ -12,6 +12,6 @@
   "vars": {
     // Sites que podem falar com o servidor (CORS e WebSocket), separados por vírgula.
     // Origens locais (localhost) só valem quando o próprio servidor roda local.
-    "ALLOWED_ORIGINS": "https://gambit-web.iago-leles.workers.dev,https://gambit.iagoleles.com",
+    "ALLOWED_ORIGINS": "https://gambit.iagoleles.com",
   },
 }

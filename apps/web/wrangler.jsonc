@@ -12,8 +12,11 @@
   // Se este nome mudar, atualize também ALLOWED_ORIGINS em apps/server/wrangler.jsonc
   // e as URLs de .github/workflows/deploy.yml.
   "routes": [{ "pattern": "gambit.iagoleles.com", "custom_domain": true }],
-  // Com "routes", o Wrangler desliga o workers.dev sozinho. Aqui ele fica ligado de propósito,
-  // para o endereço antigo continuar funcionando.
-  "workers_dev": true,
+  // O site responde só no domínio próprio. O endereço do workers.dev e os endereços de
+  // pré-visualização ficam desligados, explicitamente. O Wrangler não muda uma configuração
+  // de preview que já existe, então "preview_urls" precisa estar escrito aqui.
+  // Para religar o workers.dev: workers_dev true, e inclua a origem em ALLOWED_ORIGINS.
+  "workers_dev": false,
+  "preview_urls": false,
   "observability": { "enabled": true },
 }

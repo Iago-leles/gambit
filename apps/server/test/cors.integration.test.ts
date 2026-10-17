@@ -3,12 +3,18 @@ import { createRoom, httpRequest, startServer, tryUpgrade } from "./helpers";
 
 /**
  * O Worker roda local (127.0.0.1), então origens locais passam.
- * As duas origens de produção vêm de `vars.ALLOWED_ORIGINS` no wrangler.jsonc.
+ * A origem de produção vem de `vars.ALLOWED_ORIGINS` no wrangler.jsonc.
+ * O endereço antigo do site (workers.dev) foi desligado e deve ser recusado.
  */
 const LOCAL = "http://localhost:3000";
-const WEB = "https://gambit-web.iago-leles.workers.dev";
 const DOMAIN = "https://gambit.iagoleles.com";
+const OLD_WEB = "https://gambit-web.iago-leles.workers.dev";
 const EVIL = "https://evil.example";
+
+const REFUSED = [
+  ["site de fora", EVIL],
+  ["endereço antigo do site (workers.dev, desligado)", OLD_WEB],
+] as const;
 
 let server: Awaited<ReturnType<typeof startServer>>;
 
@@ -44,7 +50,6 @@ function preflight(origin: string) {
 describe("POST /api/rooms: origem", () => {
   it.each([
     ["local", LOCAL],
-    ["site no workers.dev", WEB],
     ["domínio próprio", DOMAIN],
   ])("aceita %s e devolve essa origem, não *", async (_name, origin) => {
     const res = await post(origin);
@@ -53,8 +58,8 @@ describe("POST /api/rooms: origem", () => {
     expect(res.headers.vary).toBe("Origin");
   });
 
-  it("recusa site de fora com 403 e sem cabeçalhos CORS", async () => {
-    const res = await post(EVIL);
+  it.each(REFUSED)("recusa %s com 403 e sem cabeçalhos CORS", async (_name, origin) => {
+    const res = await post(origin);
     expect(res.status).toBe(403);
     expect(JSON.parse(res.body)).toEqual({ error: "origin_not_allowed" });
     expect(res.headers["access-control-allow-origin"]).toBeUndefined();
@@ -74,7 +79,7 @@ describe("POST /api/rooms: origem", () => {
 });
 
 describe("OPTIONS /api/rooms (preflight)", () => {
-  it.each([LOCAL, WEB, DOMAIN])("aceita %s", async (origin) => {
+  it.each([LOCAL, DOMAIN])("aceita %s", async (origin) => {
     const res = await preflight(origin);
     expect(res.status).toBe(204);
     expect(res.headers["access-control-allow-origin"]).toBe(origin);
@@ -82,8 +87,8 @@ describe("OPTIONS /api/rooms (preflight)", () => {
     expect(res.headers["access-control-allow-headers"]).toBe("content-type");
   });
 
-  it("recusa site de fora com 403", async () => {
-    const res = await preflight(EVIL);
+  it.each(REFUSED)("recusa %s com 403", async (_name, origin) => {
+    const res = await preflight(origin);
     expect(res.status).toBe(403);
     expect(res.headers["access-control-allow-origin"]).toBeUndefined();
   });
@@ -95,14 +100,14 @@ describe("WebSocket: origem", () => {
     return `/parties/room/${String(body.code)}`;
   }
 
-  it.each([LOCAL, WEB, DOMAIN])("abre com a origem %s", async (origin) => {
+  it.each([LOCAL, DOMAIN])("abre com a origem %s", async (origin) => {
     const path = await newRoomPath();
     expect((await tryUpgrade(server.base, path, origin)).status).toBe(101);
   });
 
-  it("recusa site de fora com 403", async () => {
+  it.each(REFUSED)("recusa %s com 403", async (_name, origin) => {
     const path = await newRoomPath();
-    expect((await tryUpgrade(server.base, path, EVIL)).status).toBe(403);
+    expect((await tryUpgrade(server.base, path, origin)).status).toBe(403);
   });
 
   it("abre sem Origin (cliente que não é navegador)", async () => {
