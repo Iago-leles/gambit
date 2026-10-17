@@ -47,6 +47,7 @@ No deploy, a Cloudflare cria o registro DNS e o certificado sozinha. Não precis
 
 Cuidados:
 
+- O endereço do `workers.dev` só continua no ar por causa de `"workers_dev": true`. Quando há `routes`, o Wrangler desliga o `workers.dev` sozinho, e o endereço antigo passa a dar `404`. Quem apagar essa linha desliga o endereço antigo no próximo deploy.
 - O nome não pode ter um registro **CNAME** que já exista no DNS. O deploy falha se tiver.
 - O token do deploy precisa da permissão de rotas da zona (`Zone`, `Workers Routes`, `Edit`). O modelo "Edit Cloudflare Workers", com `All zones`, já traz isso.
 - Na primeira vez, o certificado pode levar alguns minutos. O teste do deploy tenta por até 2 minutos e meio.
