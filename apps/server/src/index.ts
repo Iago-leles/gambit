@@ -1,5 +1,6 @@
 import { RoomRules, generateRoomCode, isValidCode } from "@gambit/core";
 import { getServerByName, routePartykitRequest } from "partyserver";
+import { corsHeaders, isOriginAllowed, parseAllowedOrigins } from "./origin";
 
 export { Room } from "./room";
 
@@ -9,53 +10,60 @@ const CREATE_ATTEMPTS = 5;
 /** O corpo de `POST /api/rooms` é pequeno: só as regras. */
 const MAX_BODY_BYTES = 2048;
 
-const CORS = {
-  "access-control-allow-origin": "*",
-  "access-control-allow-methods": "POST, OPTIONS",
-  "access-control-allow-headers": "content-type",
-  "access-control-max-age": "86400",
-};
-
-function json(body: unknown, status: number) {
-  return Response.json(body, { status, headers: CORS });
+/** `origin` é a origem já aprovada do pedido, ou `null` se o pedido não veio de um navegador. */
+function json(body: unknown, status: number, origin: string | null) {
+  return Response.json(body, { status, ...(origin && { headers: corsHeaders(origin) }) });
 }
 
-async function createRoom(request: Request, env: Env): Promise<Response> {
+async function createRoom(request: Request, env: Env, origin: string | null): Promise<Response> {
   const text = await request.text();
-  if (text.length > MAX_BODY_BYTES) return json({ error: "too_large" }, 413);
+  if (text.length > MAX_BODY_BYTES) return json({ error: "too_large" }, 413, origin);
 
   let input: unknown;
   try {
     input = text ? JSON.parse(text) : {};
   } catch {
-    return json({ error: "invalid_rules" }, 400);
+    return json({ error: "invalid_rules" }, 400, origin);
   }
   const rules = RoomRules.safeParse(input);
-  if (!rules.success) return json({ error: "invalid_rules" }, 400);
+  if (!rules.success) return json({ error: "invalid_rules" }, 400, origin);
 
   for (let attempt = 0; attempt < CREATE_ATTEMPTS; attempt++) {
     const code = generateRoomCode();
     const room = await getServerByName(env.Room, code);
     const result = await room.init(rules.data);
-    if (result.created) return json({ code, creatorToken: result.creatorToken }, 201);
+    if (result.created) return json({ code, creatorToken: result.creatorToken }, 201, origin);
   }
-  return json({ error: "no_free_code" }, 503);
+  return json({ error: "no_free_code" }, 503, origin);
 }
 
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
+    const origin = request.headers.get("origin");
+    const allowed = parseAllowedOrigins(env.ALLOWED_ORIGINS);
+    const originOk = isOriginAllowed(origin, { allowed, requestUrl: request.url });
 
     if (url.pathname === "/api/rooms") {
-      if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: CORS });
-      if (request.method === "POST") return createRoom(request, env);
-      return json({ error: "method_not_allowed" }, 405);
+      // A origem é checada antes de ler o corpo: pedido de site de fora não faz nada.
+      if (!originOk) return Response.json({ error: "origin_not_allowed" }, { status: 403 });
+      if (request.method === "OPTIONS") {
+        return new Response(null, { status: 204, ...(origin && { headers: corsHeaders(origin) }) });
+      }
+      if (request.method === "POST") return createRoom(request, env, origin);
+      return json({ error: "method_not_allowed" }, 405, origin);
     }
 
     const response = await routePartykitRequest(request, env, {
-      // Código mal formado nem chega a criar um Durable Object.
-      onBeforeConnect: (_req, lobby) =>
-        isValidCode(lobby.name) ? undefined : new Response("Not found", { status: 404 }),
+      onBeforeConnect: (req, lobby) => {
+        // O navegador sempre manda `Origin` no WebSocket. Site de fora não entra.
+        const wsOrigin = req.headers.get("origin");
+        if (!isOriginAllowed(wsOrigin, { allowed, requestUrl: req.url })) {
+          return new Response("Forbidden", { status: 403 });
+        }
+        // Código mal formado nem chega a criar um Durable Object.
+        return isValidCode(lobby.name) ? undefined : new Response("Not found", { status: 404 });
+      },
     });
     return response ?? new Response("Not found", { status: 404 });
   },

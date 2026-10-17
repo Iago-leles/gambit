@@ -9,4 +9,9 @@
   // Durable Objects com SQLite: disponíveis no plano Free (ADR 010).
   "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Room"] }],
   "observability": { "enabled": true },
+  "vars": {
+    // Sites que podem falar com o servidor (CORS e WebSocket), separados por vírgula.
+    // Origens locais (localhost) só valem quando o próprio servidor roda local.
+    "ALLOWED_ORIGINS": "https://gambit-web.iago-leles.workers.dev,https://gambit.iagoleles.com",
+  },
 }

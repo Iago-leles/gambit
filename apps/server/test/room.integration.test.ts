@@ -43,11 +43,6 @@ describe("POST /api/rooms", () => {
     expect(status).toBe(400);
     expect(body.error).toBe("invalid_rules");
   });
-
-  it("libera CORS para o frontend", async () => {
-    const res = await fetch(new URL("/api/rooms", server.base), { method: "OPTIONS" });
-    expect(res.headers.get("access-control-allow-origin")).toBe("*");
-  });
 });
 
 describe("rotas", () => {
