@@ -5,8 +5,8 @@
 
 export type ViewMode = "2d" | "3d";
 
-/** O 2D segue como padrão até o 3D estar pronto. */
-export const DEFAULT_VIEW_MODE: ViewMode = "2d";
+/** O 3D é o padrão. O 2D fica como opção (acessibilidade e celulares fracos). */
+export const DEFAULT_VIEW_MODE: ViewMode = "3d";
 
 export type ViewStorage = Pick<Storage, "getItem" | "setItem">;
 

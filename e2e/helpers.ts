@@ -6,10 +6,16 @@ export function square(page: Page, name: string) {
   return page.getByRole("button", { name: new RegExp(`^${name}(,|$)`) });
 }
 
-/** Joga um lance com clique-clique. */
+/** Aciona uma casa pelo teclado. Funciona no 2D e no 3D (que tem uma grade de botões escondida). */
+export async function press(page: Page, name: string) {
+  await square(page, name).focus();
+  await page.keyboard.press("Enter");
+}
+
+/** Joga um lance, casa de origem e depois a de destino. */
 export async function move(page: Page, from: string, to: string) {
-  await square(page, from).click();
-  await square(page, to).click();
+  await press(page, from);
+  await press(page, to);
 }
 
 export function status(page: Page) {
