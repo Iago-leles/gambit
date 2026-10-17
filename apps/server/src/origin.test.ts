@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { corsHeaders, isOriginAllowed, parseAllowedOrigins } from "./origin";
 
-const WEB = "https://gambit-web.iago-leles.workers.dev";
+// Dado de exemplo para a lista de origens. Não é um endereço real do projeto.
+const WEB = "https://app.exemplo.com";
 const DOMAIN = "https://gambit.iagoleles.com";
 const PROD_REQUEST = "https://gambit-server.iago-leles.workers.dev/api/rooms";
 const LOCAL_REQUEST = "http://127.0.0.1:8787/api/rooms";

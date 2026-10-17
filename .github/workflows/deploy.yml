@@ -20,9 +20,10 @@ permissions:
 
 env:
   SERVER_URL: https://gambit-server.iago-leles.workers.dev
-  # Endereço principal do site e o endereço antigo, que continua no ar.
+  # O site responde só neste endereço.
   WEB_URL: https://gambit.iagoleles.com
-  WEB_URL_WORKERS_DEV: https://gambit-web.iago-leles.workers.dev
+  # Endereço antigo do site. Está desligado: o servidor deve recusá-lo e ele não deve responder.
+  OLD_WEB_URL: https://gambit-web.iago-leles.workers.dev
 
 jobs:
   server:
@@ -54,7 +55,7 @@ jobs:
             --data '{"variant":"shogi"}')
           test "$status" = "400" || { echo "::error::Esperava 400 do servidor, veio $status"; exit 1; }
       - name: Testar o CORS no ar
-        # Site de fora é recusado (HTTP e WebSocket). Os nossos sites são aceitos.
+        # Site de fora é recusado (HTTP e WebSocket). O nosso site é aceito. O endereço antigo é recusado.
         run: |
           evil=$(curl --silent --output /dev/null --write-out "%{http_code}" \
             --request OPTIONS "$SERVER_URL/api/rooms" \
@@ -72,13 +73,16 @@ jobs:
             --header "Origin: https://evil.example")
           test "$ws" = "403" || { echo "::error::WebSocket de site de fora devia receber 403, veio $ws"; exit 1; }
 
-          for origin in "$WEB_URL" "$WEB_URL_WORKERS_DEV"; do
-            headers=$(curl --silent --dump-header - --output /dev/null \
-              --request OPTIONS "$SERVER_URL/api/rooms" \
-              --header "Origin: $origin" | tr -d "\r")
-            echo "$headers" | grep --ignore-case --quiet "^access-control-allow-origin: $origin$" \
-              || { echo "::error::A origem $origin devia ser aceita"; echo "$headers"; exit 1; }
-          done
+          headers=$(curl --silent --dump-header - --output /dev/null \
+            --request OPTIONS "$SERVER_URL/api/rooms" \
+            --header "Origin: $WEB_URL" | tr -d "\r")
+          echo "$headers" | grep --ignore-case --quiet "^access-control-allow-origin: $WEB_URL$" \
+            || { echo "::error::A origem $WEB_URL devia ser aceita"; echo "$headers"; exit 1; }
+
+          old=$(curl --silent --output /dev/null --write-out "%{http_code}" \
+            --request OPTIONS "$SERVER_URL/api/rooms" \
+            --header "Origin: $OLD_WEB_URL")
+          test "$old" = "403" || { echo "::error::O endereço antigo do site devia receber 403, veio $old"; exit 1; }
 
   web:
     # O site aponta para o servidor, então o servidor sobe primeiro.
@@ -98,12 +102,20 @@ jobs:
       - name: Publicar o site
         run: pnpm --filter @gambit/web release
       - name: Testar o site no ar
-        # O domínio novo pode levar uns minutos para ter DNS e certificado. Por isso,
-        # até 10 tentativas com 15 s entre elas. O endereço antigo deve responder já.
+        # Se o domínio mudar, pode levar uns minutos para ter DNS e certificado. Por isso,
+        # até 10 tentativas com 15 s entre elas.
         run: |
-          for url in "$WEB_URL" "$WEB_URL_WORKERS_DEV"; do
-            curl --fail --silent --show-error \
-              --retry 10 --retry-delay 15 --retry-all-errors \
-              "$url/" | grep --quiet "Gambit" \
-              || { echo "::error::O site não respondeu em $url"; exit 1; }
+          curl --fail --silent --show-error \
+            --retry 10 --retry-delay 15 --retry-all-errors \
+            "$WEB_URL/" | grep --quiet "Gambit" \
+            || { echo "::error::O site não respondeu em $WEB_URL"; exit 1; }
+      - name: Conferir que o endereço antigo está desligado
+        # O desligamento pode levar alguns segundos para valer. Também pega quem religar sem querer.
+        run: |
+          for attempt in 1 2 3 4 5 6; do
+            status=$(curl --silent --output /dev/null --write-out "%{http_code}" "$OLD_WEB_URL/")
+            test "$status" = "404" && exit 0
+            sleep 10
           done
+          echo "::error::O endereço antigo devia estar desligado (404), veio $status"
+          exit 1
