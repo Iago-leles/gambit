@@ -24,7 +24,7 @@ export default tseslint.config(
       globals: { ...globals.node },
       parserOptions: {
         projectService: {
-          allowDefaultProject: ["*.js", "*.ts", "packages/*/vitest.config.ts"],
+          allowDefaultProject: ["*.js", "packages/*/vitest.config.ts"],
         },
         tsconfigRootDir: import.meta.dirname,
       },
