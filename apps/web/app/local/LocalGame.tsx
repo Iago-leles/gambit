@@ -4,21 +4,25 @@ import { describeResult } from "@gambit/core";
 import Link from "next/link";
 import { useState } from "react";
 import { useStore } from "zustand";
-import { Board2D } from "@/components/Board2D";
+import { BoardView } from "@/components/BoardView";
 import { createLocalGameStore } from "@/lib/local-game-store";
 import styles from "@/components/GameLayout.module.css";
 import { MoveList } from "@/components/MoveList";
+import { useViewMode } from "@/components/useViewMode";
+import { ViewToggle } from "@/components/ViewToggle";
 
 export function LocalGame() {
   const [store] = useState(() => createLocalGameStore());
   const state = useStore(store);
+  const [view, setView] = useViewMode();
   const { game } = state;
   const isOver = game.result !== undefined;
 
   return (
     <main className={styles.layout}>
       <div className={styles.boardArea}>
-        <Board2D
+        <BoardView
+          view={view}
           pieces={state.pieces}
           orientation={state.orientation}
           selected={state.selected}
@@ -56,6 +60,7 @@ export function LocalGame() {
           <button type="button" className={styles.button} onClick={state.flip}>
             Virar tabuleiro
           </button>
+          <ViewToggle view={view} onChange={setView} />
           {isOver ? (
             <button
               type="button"
