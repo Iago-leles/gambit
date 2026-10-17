@@ -4,7 +4,7 @@ Aplicação de xadrez em 3D no navegador, com salas criadas pelo próprio usuár
 
 É um projeto pessoal de portfólio, sem fins comerciais, pensado para rodar com **custo zero**.
 
-> **Status:** em construção. Já dá para criar uma sala e jogar online em 2D, com testes E2E em dois navegadores. O servidor já está publicado na Cloudflare. O site está sendo preparado para o deploy ([docs/deploy.md](docs/deploy.md)). O plano completo está em [docs/plano.md](docs/plano.md) e as decisões em [docs/adr/](docs/adr/).
+> **Status:** em construção. Já dá para criar uma sala e jogar online em 3D (com o 2D como opção), com testes E2E em dois navegadores. O servidor já está publicado na Cloudflare. O site está sendo preparado para o deploy ([docs/deploy.md](docs/deploy.md)). O plano completo está em [docs/plano.md](docs/plano.md) e as decisões em [docs/adr/](docs/adr/).
 
 ---
 
