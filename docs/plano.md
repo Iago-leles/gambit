@@ -1,4 +1,4 @@
-# Plano de desenvolvimento — Xadrez 3D Online (gambit)
+# Plano de desenvolvimento — Gambit
 
 ## Contexto
 
@@ -214,7 +214,7 @@ Por fase:
 - **Fase 5:** revisar a demo publicada e o preview de link colando a URL no WhatsApp.
 - **Sempre:** CI verde em cada push. Conferir uso do plano Free no painel da Cloudflare depois do deploy.
 
-## Pontos em aberto (não bloqueiam as Fases 0–2)
+## Decisões que estavam em aberto
 
-- Direção de arte do 3D (decidir antes da Fase 3).
-- Nome final: a pasta se chama `gambit`, o README diz `xadrez3d`.
+- Direção de arte do 3D: low-poly, com peças geradas por código. Veja o [ADR 011](adr/011-arte-low-poly-procedural.md).
+- Nome do projeto: **Gambit**. É o nome do site, da pasta, dos pacotes e do domínio. O nome antigo, `xadrez3d`, não é mais usado.
