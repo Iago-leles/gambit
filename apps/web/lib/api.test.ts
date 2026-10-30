@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ApiError, createRoom } from "./api";
+import { ApiError, createRoom, rateLimitMessage } from "./api";
 
 const BASE = "http://servidor.test";
 
@@ -39,5 +39,34 @@ describe("createRoom", () => {
     await expect(createRoom({}, { baseUrl: BASE, fetchFn })).rejects.toEqual(
       new ApiError("network"),
     );
+  });
+});
+
+describe("limite de criação de sala", () => {
+  it("429 vira ApiError rate_limited com os segundos de espera", async () => {
+    const { fetchFn } = fakeFetch(429, { error: "rate_limited", retryAfterSeconds: 240 });
+    const error = await createRoom({}, { baseUrl: BASE, fetchFn }).catch((e: unknown) => e);
+    expect(error).toBeInstanceOf(ApiError);
+    expect(error).toMatchObject({ code: "rate_limited", retryAfterSeconds: 240 });
+  });
+
+  it("ignora tempo de espera inválido", async () => {
+    const { fetchFn } = fakeFetch(429, { error: "rate_limited", retryAfterSeconds: "logo" });
+    const error = await createRoom({}, { baseUrl: BASE, fetchFn }).catch((e: unknown) => e);
+    expect(error).toMatchObject({ code: "rate_limited", retryAfterSeconds: undefined });
+  });
+});
+
+describe("rateLimitMessage", () => {
+  it("arredonda os segundos para minutos, para cima", () => {
+    expect(rateLimitMessage(1)).toBe(
+      "Muitas salas criadas por este endereço. Tente de novo em 1 minuto.",
+    );
+    expect(rateLimitMessage(61)).toContain("em 2 minutos.");
+    expect(rateLimitMessage(600)).toContain("em 10 minutos.");
+  });
+
+  it("sem tempo conhecido, pede para tentar daqui a pouco", () => {
+    expect(rateLimitMessage(undefined)).toContain("daqui a pouco");
   });
 });

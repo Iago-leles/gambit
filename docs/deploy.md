@@ -129,6 +129,12 @@ As regras:
 - Passou do limite, as operações falham até as 00:00 UTC. Nunca há cobrança.
 - Salas inativas por 24 horas apagam o próprio armazenamento.
 
-## Pendente
+## Limite de criação de sala por IP
 
-- Limite de uso por IP em `POST /api/rooms`.
+`POST /api/rooms` aceita até **20 salas por IP a cada 10 minutos**. Passou disso, o servidor responde `429` com `Retry-After` e `{"error":"rate_limited","retryAfterSeconds":N}`. A home mostra "Muitas salas criadas por este endereço. Tente de novo em N minutos." Depois da janela, volta a funcionar. A decisão está no [ADR 012](adr/012-limite-por-ip.md).
+
+- Os valores ficam em `vars` de `apps/server/wrangler.jsonc`: `RATE_LIMIT_MAX_ROOMS` e `RATE_LIMIT_WINDOW_SECONDS`. Mudou, faça deploy.
+- O IP vem de `CF-Connecting-IP`. Sem ele (desenvolvimento) todos dividem a chave `no-ip`.
+- Só pedidos que criam sala contam. Origem recusada (403) e regras inválidas (400) não contam. O teste do deploy continua dando 400.
+- O E2E sobe o servidor com `--var RATE_LIMIT_MAX_ROOMS:100000`, e os testes de integração fazem o mesmo.
+- Para zerar o contador de um IP na hora, espere a janela acabar. O Durable Object apaga o registro sozinho.

@@ -16,3 +16,4 @@ Quando uma decisão mudar, não apague o ADR antigo. Marque como "Substituído p
 | [008](008-identidade-por-token.md)            | Identidade por token de assento, sem login      | Aceito |
 | [009](009-cena-3d-como-projecao.md)           | Cena 3D como projeção do estado                 | Aceito |
 | [010](010-custo-zero-cloudflare.md)           | Custo zero na Cloudflare                        | Aceito |
+| [012](012-limite-por-ip.md)                   | Limite de criação de sala por IP                | Aceito |

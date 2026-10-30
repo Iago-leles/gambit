@@ -4,7 +4,7 @@ import { isValidCode, normalizeCode, type CreatorColor } from "@gambit/core";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, type SyntheticEvent } from "react";
-import { ApiError, createRoom } from "@/lib/api";
+import { ApiError, createRoom, rateLimitMessage } from "@/lib/api";
 import { saveSeatToken } from "@/lib/seat-tokens";
 import styles from "./page.module.css";
 
@@ -58,7 +58,11 @@ export function HomeActions() {
       router.push(`/r/${room.code}`);
     } catch (error) {
       const code = error instanceof ApiError ? error.code : "unknown";
-      setCreateError(ERROR_TEXT[code] ?? "Algo deu errado ao criar a sala.");
+      setCreateError(
+        code === "rate_limited" && error instanceof ApiError
+          ? rateLimitMessage(error.retryAfterSeconds)
+          : (ERROR_TEXT[code] ?? "Algo deu errado ao criar a sala."),
+      );
       setCreating(false);
     }
   };

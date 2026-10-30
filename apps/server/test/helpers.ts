@@ -11,10 +11,22 @@ import { unstable_startWorker } from "wrangler";
 
 type Worker = Awaited<ReturnType<typeof unstable_startWorker>>;
 
-/** Sobe o Worker real (workerd local) com o wrangler.jsonc do servidor. */
-export async function startServer(): Promise<{ worker: Worker; base: URL }> {
+/**
+ * Sobe o Worker real (workerd local) com o wrangler.jsonc do servidor.
+ * Os testes criam muitas salas do mesmo IP, então o limite começa alto.
+ * Os testes do limite passam os próprios valores em `vars`.
+ */
+export async function startServer(
+  vars: Record<string, string> = {},
+): Promise<{ worker: Worker; base: URL }> {
   const worker = await unstable_startWorker({
     config: fileURLToPath(new URL("../wrangler.jsonc", import.meta.url)),
+    bindings: Object.fromEntries(
+      Object.entries({ RATE_LIMIT_MAX_ROOMS: "100000", ...vars }).map(([k, v]) => [
+        k,
+        { type: "plain_text" as const, value: v },
+      ]),
+    ),
     dev: { server: { port: 0 }, inspector: false, persist: false, logLevel: "error" },
   });
   await worker.ready;

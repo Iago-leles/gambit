@@ -4,14 +4,24 @@
   "main": "src/index.ts",
   "compatibility_date": "2026-10-01",
   "durable_objects": {
-    "bindings": [{ "name": "Room", "class_name": "Room" }],
+    "bindings": [
+      { "name": "Room", "class_name": "Room" },
+      { "name": "RATE_LIMITER", "class_name": "RateLimiter" },
+    ],
   },
   // Durable Objects com SQLite: disponíveis no plano Free (ADR 010).
-  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Room"] }],
+  "migrations": [
+    { "tag": "v1", "new_sqlite_classes": ["Room"] },
+    { "tag": "v2", "new_sqlite_classes": ["RateLimiter"] },
+  ],
   "observability": { "enabled": true },
   "vars": {
     // Sites que podem falar com o servidor (CORS e WebSocket), separados por vírgula.
     // Origens locais (localhost) só valem quando o próprio servidor roda local.
     "ALLOWED_ORIGINS": "https://gambit.iagoleles.com",
+    // Limite de criação de sala por IP (ADR 012): até MAX_ROOMS salas a cada WINDOW_SECONDS.
+    // Valor ausente ou inválido volta ao padrão (20 salas por 10 minutos).
+    "RATE_LIMIT_MAX_ROOMS": "20",
+    "RATE_LIMIT_WINDOW_SECONDS": "600",
   },
 }
