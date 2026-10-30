@@ -4,7 +4,11 @@ import { isValidCode } from "@gambit/core";
 export const SERVER_URL = process.env.NEXT_PUBLIC_SERVER_URL ?? "http://127.0.0.1:8787";
 
 export class ApiError extends Error {
-  constructor(readonly code: string) {
+  constructor(
+    readonly code: string,
+    /** Só no `rate_limited`: segundos até poder tentar de novo. */
+    readonly retryAfterSeconds?: number,
+  ) {
     super(`Erro da API: ${code}`);
     this.name = "ApiError";
   }
@@ -39,7 +43,11 @@ export async function createRoom(
   const body: unknown = await response.json().catch(() => null);
   if (!response.ok) {
     const code = isRecord(body) && typeof body.error === "string" ? body.error : "unknown";
-    throw new ApiError(code);
+    const retryAfter = isRecord(body) ? body.retryAfterSeconds : undefined;
+    throw new ApiError(
+      code,
+      typeof retryAfter === "number" && retryAfter > 0 ? retryAfter : undefined,
+    );
   }
   if (
     isRecord(body) &&
@@ -50,6 +58,14 @@ export async function createRoom(
     return { code: body.code, creatorToken: body.creatorToken };
   }
   throw new ApiError("bad_response");
+}
+
+/** Texto para o jogador quando o servidor limita a criação de salas. */
+export function rateLimitMessage(retryAfterSeconds: number | undefined): string {
+  const base = "Muitas salas criadas por este endereço.";
+  if (retryAfterSeconds === undefined) return `${base} Tente de novo daqui a pouco.`;
+  const minutes = Math.ceil(retryAfterSeconds / 60);
+  return `${base} Tente de novo em ${String(minutes)} ${minutes === 1 ? "minuto" : "minutos"}.`;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

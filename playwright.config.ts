@@ -24,7 +24,7 @@ export default defineConfig({
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
   webServer: [
     {
-      command: `pnpm --filter @gambit/server exec wrangler dev --port ${SERVER_PORT} --persist-to .wrangler/e2e`,
+      command: `pnpm --filter @gambit/server exec wrangler dev --port ${SERVER_PORT} --persist-to .wrangler/e2e --var RATE_LIMIT_MAX_ROOMS:100000`,
       port: SERVER_PORT,
       reuseExistingServer: !isCI,
       timeout: 120_000,
