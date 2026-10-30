@@ -15,6 +15,7 @@ import { useStore } from "zustand";
 import { BoardView } from "@/components/BoardView";
 import { ClockFace } from "@/components/ClockFace";
 import styles from "@/components/GameLayout.module.css";
+import { ResultCard } from "@/components/ResultCard";
 import { MoveList } from "@/components/MoveList";
 import { useViewMode } from "@/components/useViewMode";
 import { ViewToggle } from "@/components/ViewToggle";
@@ -154,6 +155,8 @@ export function OnlineGame({ code }: { code: string }) {
         <p className={styles.status} role="status" aria-live="polite">
           {statusText(state)}
         </p>
+
+        {snapshot?.result && <ResultCard result={snapshot.result} mode="online" />}
 
         {snapshot?.status === "waiting" && <Lobby code={code} />}
 

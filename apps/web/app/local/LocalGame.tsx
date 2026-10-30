@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { useStore } from "zustand";
 import { BoardView } from "@/components/BoardView";
+import { ResultCard } from "@/components/ResultCard";
 import { createLocalGameStore } from "@/lib/local-game-store";
 import styles from "@/components/GameLayout.module.css";
 import { MoveList } from "@/components/MoveList";
@@ -51,6 +52,8 @@ export function LocalGame() {
             : `${game.turn === "white" ? "Brancas" : "Pretas"} jogam${game.isCheck ? ". Xeque." : ""}`}
         </p>
 
+        {game.result && <ResultCard result={game.result} mode="local" onNewGame={state.newGame} />}
+
         <MoveList
           moves={game.moves}
           emptyText="As brancas começam. Clique numa peça para ver os lances."
@@ -61,17 +64,7 @@ export function LocalGame() {
             Virar tabuleiro
           </button>
           <ViewToggle view={view} onChange={setView} />
-          {isOver ? (
-            <button
-              type="button"
-              className={`${styles.button} ${styles.primary}`}
-              onClick={() => {
-                state.newGame();
-              }}
-            >
-              Nova partida
-            </button>
-          ) : (
+          {!isOver && (
             <button type="button" className={styles.button} onClick={state.resign}>
               Desistir
             </button>

@@ -44,6 +44,10 @@ const REASON_TEXT: Record<EndReason, string> = {
   variantWin: "regra da variante",
 };
 
+export function describeReason(reason: EndReason): string {
+  return REASON_TEXT[reason];
+}
+
 export function describeResult(result: GameResult): string {
   const reason = REASON_TEXT[result.reason];
   if (result.winner === null) return `Empate por ${reason}`;
