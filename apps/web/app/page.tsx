@@ -8,7 +8,9 @@ export default function Home() {
       <p className={styles.lead}>
         Crie uma sala, escolha o tempo e mande o código para o oponente.
       </p>
-      <HomeActions />
+      <div id="criar-sala">
+        <HomeActions />
+      </div>
     </main>
   );
 }

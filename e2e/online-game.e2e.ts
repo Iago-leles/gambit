@@ -112,6 +112,23 @@ test("relógio zera e a partida acaba por tempo", async ({ browser }) => {
   for (const page of [white, black]) {
     await expect(status(page)).toHaveText("Pretas vencem por tempo", { timeout: 20_000 });
   }
+
+  // O cartão de resultado aparece para os dois, com as duas saídas.
+  for (const page of [white, black]) {
+    const card = page.getByTestId("result-card");
+    await expect(card).toContainText("Pretas vencem");
+    await expect(card).toContainText("Motivo: tempo");
+    await expect(card.getByRole("link", { name: "Nova sala" })).toBeVisible();
+    await expect(card.getByRole("link", { name: "Voltar ao início" })).toBeVisible();
+  }
+
+  await white.getByRole("link", { name: "Voltar ao início" }).click();
+  await expect(white).toHaveURL(/\/$/);
+  await expect(white.getByRole("heading", { name: "Criar sala" })).toBeVisible();
+
+  await black.getByRole("link", { name: "Nova sala" }).click();
+  await expect(black).toHaveURL(/\/#criar-sala$/);
+  await expect(black.getByRole("heading", { name: "Criar sala" })).toBeVisible();
 });
 
 test("sala que não existe mostra aviso", async ({ page }) => {
