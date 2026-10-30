@@ -1,6 +1,6 @@
-# Xadrez 3D Online
+# Gambit
 
-Aplicação de xadrez em 3D no navegador, com salas criadas pelo próprio usuário, cada uma com suas regras e um código para o oponente entrar.
+Gambit é uma aplicação de xadrez em 3D no navegador, com salas criadas pelo próprio usuário, cada uma com suas regras e um código para o oponente entrar.
 
 É um projeto pessoal de portfólio, sem fins comerciais, pensado para rodar com **custo zero**.
 
